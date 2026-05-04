@@ -91,21 +91,33 @@ def calcular_veracidad(texto_usuario, articulos_encontrados):
         return mejor_puntaje, "Probablemente Falso"
 
 def motor_nexo_news(noticia_input):
-    """Genera una búsqueda inteligente usando las palabras más largas y el operador OR."""
+    """Genera una búsqueda con respaldo: primero precisa, luego amplia."""
     texto_limpio = limpiar_texto(noticia_input)
     palabras = texto_limpio.split()
     
-    # Corrección: cambiamos 'no' por 'not' para cumplir con la sintaxis de Python
-    if not palabras:
-        return {"puntaje": 0, "veredicto": "Texto inválido", "fuentes": []}
+    # 1. Filtro de Contexto Mínimo (Soluciona el problema de "Galán")
+    # Exigimos al menos 5 palabras clave válidas para poder juzgar el contexto.
+    if len(palabras) < 5:
+        return {
+            "puntaje": 0,
+            "veredicto": "⚠️ Texto muy corto. Por favor ingresa un titular completo o un párrafo con más contexto.",
+            "fuentes": []
+        }
     
-    # Ordenamos las palabras por su tamaño (las más largas primero)
-    palabras_clave = sorted(palabras, key=len, reverse=True)[:3]
+    # 2. Búsqueda Principal (Estricta - AND implícito)
+    # Tomamos las 3 primeras palabras (el sujeto y la acción suelen estar al principio)
+    # Ej: "alcaldía bogotá confirmó"
+    query_estricta = " ".join(palabras[:3])
+    articulos = buscar_fuentes_confiables(query_estricta)
     
-    # Las unimos con " OR " para ampliar la red de búsqueda
-    query = " OR ".join(palabras_clave)
-    
-    articulos = buscar_fuentes_confiables(query)
+    # 3. Búsqueda de Respaldo (Relajada - OR)
+    # Si la búsqueda estricta no arrojó NADA, abrimos un poco la red usando
+    # solo las 2 palabras más largas y distintivas unidas por OR.
+    if not articulos:
+        palabras_largas = sorted(palabras, key=len, reverse=True)[:2]
+        query_relajada = " OR ".join(palabras_largas)
+        articulos = buscar_fuentes_confiables(query_relajada)
+        
     puntaje, veredicto = calcular_veracidad(noticia_input, articulos)
     
     return {
