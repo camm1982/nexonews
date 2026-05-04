@@ -8,9 +8,10 @@ Created on Tue Apr 28 16:26:18 2026
 import requests
 from fuzzywuzzy import fuzz
 import re
+import streamlit as st  # <-- Añadimos esta importación
 
-# Configuración inicial
-API_KEY = "7c5e1a3f13b34d27beace7dbf95a7579"  # Recuerda ocultarla con st.secrets para la exposición final
+# Hacemos que la clave se lea de un archivo secreto en la nube
+API_KEY = st.secrets["NEWSAPI_KEY"] 
 DOMINIOS_CONFIABLES = "eltiempo.com,elespectador.com,caracol.com.co,bluradio.com,lasillavacia.com,colombiacheck.com"
 
 def limpiar_texto(texto):
